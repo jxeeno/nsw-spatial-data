@@ -34,8 +34,6 @@ jobs:
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        virtualenv esridump
-        source esridump/bin/activate
         pip install esridump
         esri2geojson $DL_PATH ${{github.event.inputs.fname}}.json --jsonlines
     - name: Create geojson
