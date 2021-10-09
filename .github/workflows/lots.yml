@@ -35,7 +35,7 @@ jobs:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
         pip install esridump
-        esri2geojson esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.json
+        esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.json
     - name: Create geojson
       run: |
         gzip ${{github.event.inputs.fname}}.geojson
