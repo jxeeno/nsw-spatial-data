@@ -31,13 +31,31 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: jxeeno/pyesridump
+      # Setup Python (faster than using Python container)
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.7"
+
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+    - name: Install dependencies
+      if: steps.cache-pipenv.outputs.cache-hit != 'true'
+      run: |
+        pipenv install --dev
     - name: Download
       id: download
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        pip install
-        esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
+        pipenv run esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
     - name: Create geojson
       run: |
         gzip ${{github.event.inputs.fname}}.geojson
