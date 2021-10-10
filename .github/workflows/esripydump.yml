@@ -73,11 +73,11 @@ jobs:
     - name: Download
       id: download
       env:
-        DL_PATH: ${{github.event.inputs.url}}
+        DL_PATH: ${{inputs.url}}
       run: |
         pip install -e .
         tail -n 1 prev.geojson
-        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.${{github.event.inputs.oidfield}}')
+        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.${{inputs.oidfield}}')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
         timeout 5h esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
@@ -111,26 +111,26 @@ jobs:
       - name: Generate mbtiles
         id: download
         env:
-          DL_PATH: ${{github.event.inputs.url}}
+          DL_PATH: ${{inputs.url}}
         run: |
           ls -l
-          mv prev.geojson.gz ${{github.event.inputs.lid}}.geojson.gz
-          gunzip -k ${{github.event.inputs.lid}}.geojson.gz
+          mv prev.geojson.gz ${{inputs.lid}}.geojson.gz
+          gunzip -k ${{inputs.lid}}.geojson.gz
           ls -l
-          tippecanoe -zg -ab -o ${{github.event.inputs.lid}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{github.event.inputs.lid}}.geojson
-          gzip ${{github.event.inputs.lid}}.mbtiles
+          tippecanoe -zg -ab -o ${{inputs.lid}}.mbtiles -l "${{inputs.lid}}" -n "${{inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{inputs.lid}}.geojson
+          gzip ${{inputs.lid}}.mbtiles
       - name: Archive AUS mbtiles as artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{github.event.inputs.lid}}-mbtiles
-          path: ${{github.event.inputs.lid}}.mbtiles.gz
+          name: ${{inputs.lid}}-mbtiles
+          path: ${{inputs.lid}}.mbtiles.gz
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{github.event.inputs.lid}}.mbtiles.gz
-            ${{github.event.inputs.lid}}.geojson.gz
-          tag_name: ${{github.event.inputs.tag}}
+            ${{inputs.lid}}.mbtiles.gz
+            ${{inputs.lid}}.geojson.gz
+          tag_name: ${{inputs.tag}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
