@@ -29,12 +29,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        repository: jxeeno/pyesridump
     - name: Download
       id: download
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        pip install esridump
+        pip install
         esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
     - name: Create geojson
       run: |
