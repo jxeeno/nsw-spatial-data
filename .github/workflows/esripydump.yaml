@@ -1,0 +1,84 @@
+name: ESRI FeatureService Dump
+on:
+  workflow_call:
+    inputs:
+      url:
+        description: 'URL to FeatureService'
+        required: true
+        default: 'https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/8'
+      fname:
+        description: 'File name'
+        required: true
+        default: 'nsw_lots'
+      lid:
+        description: 'Layer ID'
+        required: true
+        default: 'nsw_lots'
+      lname:
+        description: 'Layer name'
+        required: true
+        default: 'NSW Lots'
+      tag:
+        description: 'Release tag'
+        required: true
+        default: 'NSW-2021-10'
+
+jobs:
+  checkout_dl:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Download
+      id: download
+      env:
+        DL_PATH: ${{github.event.inputs.url}}
+      run: |
+        pip install esridump
+        esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
+    - name: Create geojson
+      run: |
+        gzip ${{github.event.inputs.fname}}.geojson
+        ls -l
+    - name: Archive geojson as artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{github.event.inputs.fname}}-geojsonseq
+        path: ${{github.event.inputs.fname}}.geojson.gz
+          
+  mbtiles:
+    runs-on: ubuntu-latest
+    container: klokantech/tippecanoe
+    needs:
+      - checkout_dl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download AUS geojson from artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{github.event.inputs.fname}}-geojsonseq
+      - name: Generate mbtiles
+        id: download
+        env:
+          DL_PATH: ${{github.event.inputs.url}}
+        run: |
+          ls -l
+          gunzip -k ${{github.event.inputs.fname}}.geojson.gz
+          tippecanoe -zg -ab -o ${{github.event.inputs.fname}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --drop-densest-as-needed ${{github.event.inputs.fname}}.geojson
+          gzip ${{github.event.inputs.fname}}.mbtiles
+      - name: Archive AUS mbtiles as artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.fname}}-mbtiles
+          path: ${{github.event.inputs.fname}}.mbtiles.gz
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{github.event.inputs.fname}}.mbtiles.gz
+            ${{github.event.inputs.fname}}.geojson.gz
+          tag_name: ${{github.event.inputs.tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
