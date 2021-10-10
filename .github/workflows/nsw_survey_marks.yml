@@ -1,0 +1,37 @@
+name: Update easements
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Ignore'
+        required: false
+
+jobs:
+  getdate:
+    name: Generate week tag
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.date.outputs.date }}
+    steps:
+      - name: Get current week
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-W%U')"
+  dumpgda2020:
+    uses: jxeeno/nsw-spatial-data/.github/workflows/esripydump.yml@main
+    needs: getdate
+    with:
+      url: https://portal.spatial.nsw.gov.au/server/rest/services/SurveyMarkGDA2020/FeatureServer/0
+      lid: nsw_survey_marks_gda2020
+      lname: NSW Survey Marks GDA2020
+      tag: NSW-${{needs.getdate.outputs.date}}
+      oidfield: OBJECTID
+  dumpgda94:
+    uses: jxeeno/nsw-spatial-data/.github/workflows/esripydump.yml@main
+    needs: getdate
+    with:
+      url: https://portal.spatial.nsw.gov.au/server/rest/services/SurveyMarkGDA94/FeatureServer/0
+      lid: nsw_survey_marks_gda94
+      lname: NSW Survey Marks GDA94
+      tag: NSW-${{needs.getdate.outputs.date}}
+      oidfield: OBJECTID
