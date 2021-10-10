@@ -97,7 +97,7 @@ jobs:
         path: prev.geojson.gz
   gdal:
     runs-on: ubuntu-latest
-    container: osgeo/gdal:alpine-small-latest
+    container: osgeo/gdal:alpine-normal-latest
     needs:
       - checkout_dl
     steps:
