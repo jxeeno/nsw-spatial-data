@@ -1,4 +1,4 @@
-name: Update easements
+name: Update survey marks
 
 on:
   workflow_dispatch:
