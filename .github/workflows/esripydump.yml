@@ -7,11 +7,6 @@ on:
         required: true
         default: 'https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/8'
         type: string
-      fname:
-        description: 'File name'
-        required: true
-        default: 'nsw_lots'
-        type: string
       lid:
         description: 'Layer ID'
         required: true
@@ -27,33 +22,83 @@ on:
         required: true
         default: 'NSW-2021-10'
         type: string
+      oidfield:
+        description: 'Object ID Field'
+        required: true
+        default: 'objectid'
+        type: string
 
 jobs:
+  prepare_artifact:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create dummy artifact
+      run: |
+        touch prev.geojson
+        gzip prev.geojson
+    - name: Archive geojson as artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: prev-geojsonseq
+        path: prev.geojson.gz
+
   checkout_dl:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        iteration: [1,2,3]
+    needs:
+      - prepare_artifact
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        repository: jxeeno/pyesridump
+    # Setup Python (faster than using Python container)
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.7"
+    - name: Download AUS geojson from artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: prev-geojsonseq
+    - name: Restore old geojson
+      id: restore
+      run: |
+        ls -l
+        gunzip prev.geojson.gz
+        touch prev.geojson
     - name: Download
       id: download
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        pip install esridump
-        esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
+        pip install -e .
+        tail -n 1 prev.geojson
+        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.${{github.event.inputs.oidfield}}')
+        NEXT="${NEXT:-0}"
+        echo "Start at $NEXT"
+        timeout 5h esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
     - name: Create geojson
       run: |
-        gzip ${{github.event.inputs.fname}}.geojson
+        ls -l
+        cat prev.geojson additional.geojson > new.geojson
+        ls -l
+        mv prev.geojson oldprev.geojson
+        mv new.geojson prev.geojson
+        gzip prev.geojson
         ls -l
     - name: Archive geojson as artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: ${{github.event.inputs.fname}}-geojsonseq
-        path: ${{github.event.inputs.fname}}.geojson.gz
-          
+        name: prev-geojsonseq
+        path: prev.geojson.gz
+
   mbtiles:
     runs-on: ubuntu-latest
-    container: klokantech/tippecanoe
+    container: ghcr.io/jxeeno/tippecanoe-docker
     needs:
       - checkout_dl
     steps:
@@ -62,28 +107,30 @@ jobs:
       - name: Download AUS geojson from artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{github.event.inputs.fname}}-geojsonseq
+          name: prev-geojsonseq
       - name: Generate mbtiles
         id: download
         env:
           DL_PATH: ${{github.event.inputs.url}}
         run: |
           ls -l
-          gunzip -k ${{github.event.inputs.fname}}.geojson.gz
-          tippecanoe -zg -ab -o ${{github.event.inputs.fname}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --drop-densest-as-needed ${{github.event.inputs.fname}}.geojson
-          gzip ${{github.event.inputs.fname}}.mbtiles
+          mv prev.geojson.gz ${{github.event.inputs.lid}}.geojson.gz
+          gunzip -k ${{github.event.inputs.lid}}.geojson.gz
+          ls -l
+          tippecanoe -zg -ab -o ${{github.event.inputs.lid}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{github.event.inputs.lid}}.geojson
+          gzip ${{github.event.inputs.lid}}.mbtiles
       - name: Archive AUS mbtiles as artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{github.event.inputs.fname}}-mbtiles
-          path: ${{github.event.inputs.fname}}.mbtiles.gz
+          name: ${{github.event.inputs.lid}}-mbtiles
+          path: ${{github.event.inputs.lid}}.mbtiles.gz
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{github.event.inputs.fname}}.mbtiles.gz
-            ${{github.event.inputs.fname}}.geojson.gz
+            ${{github.event.inputs.lid}}.mbtiles.gz
+            ${{github.event.inputs.lid}}.geojson.gz
           tag_name: ${{github.event.inputs.tag}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
