@@ -111,7 +111,8 @@ jobs:
           ls -l
           mv prev.geojson.gz ${{github.event.inputs.lid}}.geojson.gz
           gunzip -k ${{github.event.inputs.lid}}.geojson.gz
-          tippecanoe -zg -ab -o ${{github.event.inputs.lid}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{github.event.inputs.fname}}.geojson
+          ls -l
+          tippecanoe -zg -ab -o ${{github.event.inputs.lid}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{github.event.inputs.lid}}.geojson
           gzip ${{github.event.inputs.lid}}.mbtiles
       - name: Archive AUS mbtiles as artifacts
         uses: actions/upload-artifact@v2
