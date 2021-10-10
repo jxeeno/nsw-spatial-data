@@ -115,8 +115,8 @@ jobs:
           ls -l
           mv prev.geojson.gz ${{inputs.lid}}.geojson.gz
           gunzip -k ${{inputs.lid}}.geojson.gz
-          ogr2ogr -f SQLite -dsco SPATIALITE=YES ${{inputs.lid}}.geojson ${{inputs.lid}}.sqlite &
-          ogr2ogr -f GPKG ${{inputs.lid}}.geojson ${{inputs.lid}}.gpkg &
+          ogr2ogr -f SQLite -dsco SPATIALITE=YES ${{inputs.lid}}.sqlite ${{inputs.lid}}.geojson &
+          ogr2ogr -f GPKG ${{inputs.lid}}.gpkg ${{inputs.lid}}.geojson &
           wait
           ls -l
           gzip ${{inputs.lid}}.sqlite &
