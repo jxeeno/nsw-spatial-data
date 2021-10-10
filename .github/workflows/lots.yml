@@ -93,7 +93,7 @@ jobs:
 
   mbtiles:
     runs-on: ubuntu-latest
-    container: klokantech/tippecanoe
+    container: ghcr.io/jxeeno/tippecanoe-docker
     needs:
       - checkout_dl
     steps:
