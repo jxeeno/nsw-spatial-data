@@ -6,10 +6,6 @@ on:
         description: 'URL to FeatureService'
         required: true
         default: 'https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/8'
-      fname:
-        description: 'File name'
-        required: true
-        default: 'nsw_lots'
       lid:
         description: 'Layer ID'
         required: true
@@ -42,7 +38,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        iteration: [1,2]
+        iteration: [1,2,3]
     needs:
       - prepare_artifact
     steps:
@@ -74,7 +70,7 @@ jobs:
         NEXT=$(tail -n 1 prev.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
+        timeout 5h esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
     - name: Create geojson
       run: |
         ls -l
@@ -105,22 +101,22 @@ jobs:
           DL_PATH: ${{github.event.inputs.url}}
         run: |
           ls -l
-          mv prev.geojson.gz ${{github.event.inputs.fname}}.geojson.gz
-          gunzip -k ${{github.event.inputs.fname}}.geojson.gz
-          tippecanoe -zg -ab -o ${{github.event.inputs.fname}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --drop-densest-as-needed ${{github.event.inputs.fname}}.geojson
-          gzip ${{github.event.inputs.fname}}.mbtiles
+          mv prev.geojson.gz ${{github.event.inputs.lid}}.geojson.gz
+          gunzip -k ${{github.event.inputs.lid}}.geojson.gz
+          tippecanoe -zg -ab -o ${{github.event.inputs.lid}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --coalesce-densest-as-needed --extend-zooms-if-still-dropping ${{github.event.inputs.fname}}.geojson
+          gzip ${{github.event.inputs.lid}}.mbtiles
       - name: Archive AUS mbtiles as artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{github.event.inputs.fname}}-mbtiles
-          path: ${{github.event.inputs.fname}}.mbtiles.gz
+          name: ${{github.event.inputs.lid}}-mbtiles
+          path: ${{github.event.inputs.lid}}.mbtiles.gz
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{github.event.inputs.fname}}.mbtiles.gz
-            ${{github.event.inputs.fname}}.geojson.gz
+            ${{github.event.inputs.lid}}.mbtiles.gz
+            ${{github.event.inputs.lid}}.geojson.gz
           tag_name: ${{github.event.inputs.tag}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
