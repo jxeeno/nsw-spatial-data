@@ -53,9 +53,12 @@ jobs:
       run: |
         apt-get -y install jq
         pip install -e .
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid $DL_PATH additional.geojson
+        NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
+        echo "Start at $NEXT"
+        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
     - name: Create geojson
       run: |
+        ls -l
         cat ${{github.event.inputs.fname}}.geojson additional.geojson | ${{github.event.inputs.fname}}.geojson
         gzip ${{github.event.inputs.fname}}.geojson
         ls -l
@@ -97,9 +100,12 @@ jobs:
       run: |
         apt-get -y install jq
         pip install -e .
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid $DL_PATH additional.geojson
+        NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
+        echo "Start at $NEXT"
+        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
     - name: Create geojson
       run: |
+        ls -l
         cat ${{github.event.inputs.fname}}.geojson additional.geojson | ${{github.event.inputs.fname}}.geojson
         gzip ${{github.event.inputs.fname}}.geojson
         ls -l
