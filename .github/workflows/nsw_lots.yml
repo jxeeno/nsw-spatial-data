@@ -1,0 +1,28 @@
+name: Update lots
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Ignore'
+        required: false
+
+jobs:
+  getdate:
+    name: Generate week tag
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.date.outputs.date }}
+    steps:
+      - name: Get current week
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-W%U')"
+  dump:
+    uses: jxeeno/nsw-spatial-data/.github/workflows/esripydump.yml@main
+    needs: getdate
+    with:
+      url: https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/8
+      lid: nsw_lots
+      lname: NSW Lots
+      tag: NSW-${{needs.getdate.outputs.date}}
+      oidfield: objectid
