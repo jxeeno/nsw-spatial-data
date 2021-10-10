@@ -40,6 +40,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: ${{github.event.inputs.fname}}-geojsonseq
+        if-no-files-found: ignore
     - name: Restore old geojson
       id: restore
       run: |
@@ -87,6 +88,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: ${{github.event.inputs.fname}}-geojsonseq
+        if-no-files-found: ignore
     - name: Restore old geojson
       id: restore
       run: |
