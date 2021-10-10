@@ -25,3 +25,4 @@ jobs:
       lid: nsw_easements
       lname: NSW Easements
       tag: NSW-${{needs.getdate.outputs.date}}
+      oidfield: rid
