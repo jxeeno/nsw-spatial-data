@@ -18,6 +18,10 @@ on:
         description: 'Release tag'
         required: true
         default: 'NSW-2021-10'
+      oidfield:
+        description: 'Object ID Field'
+        required: true
+        default: 'objectid'
 
 jobs:
   prepare_artifact:
@@ -67,7 +71,8 @@ jobs:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
         pip install -e .
-        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.objectid')
+        tail -n 1 prev.geojson
+        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.${{github.event.inputs.oidfield}}')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
         timeout 5h esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
