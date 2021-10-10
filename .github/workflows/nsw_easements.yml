@@ -9,7 +9,7 @@ on:
 
 jobs:
   getdate:
-    name: Example
+    name: Generate week tag
     runs-on: ubuntu-latest
     outputs:
       date: ${{ steps.date.outputs.date }}
