@@ -54,7 +54,7 @@ jobs:
     - name: Create geojson
       run: |
         ls -l
-        cat ${{github.event.inputs.fname}}.geojson additional.geojson | ${{github.event.inputs.fname}}.geojson
+        cat ${{github.event.inputs.fname}}.geojson additional.geojson > ${{github.event.inputs.fname}}.geojson
         gzip ${{github.event.inputs.fname}}.geojson
         ls -l
     - name: Archive geojson as artifacts
@@ -101,7 +101,7 @@ jobs:
     - name: Create geojson
       run: |
         ls -l
-        cat ${{github.event.inputs.fname}}.geojson additional.geojson | ${{github.event.inputs.fname}}.geojson
+        cat ${{github.event.inputs.fname}}.geojson additional.geojson > ${{github.event.inputs.fname}}.geojson
         gzip ${{github.event.inputs.fname}}.geojson
         ls -l
     - name: Archive geojson as artifacts
