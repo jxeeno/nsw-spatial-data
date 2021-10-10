@@ -46,8 +46,6 @@ jobs:
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        sudo apt-get update
-        sudo apt-get -y install jq
         pip install -e .
         NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
@@ -95,8 +93,6 @@ jobs:
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
-        sudo apt-get update
-        sudo apt-get -y install jq
         pip install -e .
         NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
