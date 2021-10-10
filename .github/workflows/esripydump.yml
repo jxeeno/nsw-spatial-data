@@ -95,7 +95,54 @@ jobs:
       with:
         name: prev-geojsonseq
         path: prev.geojson.gz
-
+  gdal:
+    runs-on: ubuntu-latest
+    container: osgeo/gdal:alpine-small-latest
+    needs:
+      - checkout_dl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download AUS geojson from artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: prev-geojsonseq
+      - name: Generate SpatialLite and geopackage
+        id: download
+        env:
+          DL_PATH: ${{inputs.url}}
+        run: |
+          ls -l
+          mv prev.geojson.gz ${{inputs.lid}}.geojson.gz
+          gunzip -k ${{inputs.lid}}.geojson.gz
+          ogr2ogr -f SQLite ${{inputs.lid}}.geojson ${{inputs.lid}}.sqlite &
+          ogr2ogr -f GPKG ${{inputs.lid}}.geojson ${{inputs.lid}}.gpkg &
+          wait
+          ls -l
+          gzip ${{inputs.lid}}.sqlite &
+          gzip ${{inputs.lid}}.gpkg &
+          wait
+          ls -l
+      - name: Archive AUS sqlite as artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{inputs.lid}}-sqlite
+          path: ${{inputs.lid}}.sqlite.gz
+      - name: Archive AUS gpkg as artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{inputs.lid}}-gpkg
+          path: ${{inputs.lid}}.gpkg.gz
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{inputs.lid}}.gpkg.gz
+            ${{inputs.lid}}.sqlite.gz
+          tag_name: ${{inputs.tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   mbtiles:
     runs-on: ubuntu-latest
     container: ghcr.io/jxeeno/tippecanoe-docker
