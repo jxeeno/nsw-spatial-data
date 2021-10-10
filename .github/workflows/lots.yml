@@ -79,7 +79,10 @@ jobs:
     - name: Create geojson
       run: |
         ls -l
-        cat prev.geojson additional.geojson > prev.geojson
+        cat prev.geojson additional.geojson > new.geojson
+        ls -l
+        mv prev.geojson oldprev.geojson
+        mv new.geojson prev.geojson
         gzip prev.geojson
         ls -l
     - name: Archive geojson as artifacts
