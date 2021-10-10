@@ -1,0 +1,27 @@
+name: Update easements
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Ignore'
+        required: false
+
+jobs:
+  getdate:
+    name: Example
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.date.outputs.date }}
+    steps:
+      - name: Get current week
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-W%U')"
+  dump:
+    uses: jxeeno/nsw-spatial-data/.github/workflows/esripydump.yml@main
+    needs: getdate
+    with:
+      url: https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/9
+      lid: nsw_easements
+      lname: NSW Easements
+      tag: NSW-${{needs.getdate.outputs.date}}
