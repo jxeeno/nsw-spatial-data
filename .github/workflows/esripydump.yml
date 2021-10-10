@@ -6,22 +6,27 @@ on:
         description: 'URL to FeatureService'
         required: true
         default: 'https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme/FeatureServer/8'
+        type: string
       fname:
         description: 'File name'
         required: true
         default: 'nsw_lots'
+        type: string
       lid:
         description: 'Layer ID'
         required: true
         default: 'nsw_lots'
+        type: string
       lname:
         description: 'Layer name'
         required: true
         default: 'NSW Lots'
+        type: string
       tag:
         description: 'Release tag'
         required: true
         default: 'NSW-2021-10'
+        type: string
 
 jobs:
   checkout_dl:
