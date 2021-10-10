@@ -24,50 +24,27 @@ on:
         default: 'NSW-2021-10'
 
 jobs:
-  checkout_dl_1:
+  prepare_artifact:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        repository: jxeeno/pyesridump
-    # Setup Python (faster than using Python container)
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.7"
-    - name: Restore old geojson
-      id: restore
+    - name: Create dummy artifact
       run: |
-        ls -l
-        touch ${{github.event.inputs.fname}}.geojson
-    - name: Download
-      id: download
-      env:
-        DL_PATH: ${{github.event.inputs.url}}
-      run: |
-        pip install -e .
-        NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
-        NEXT="${NEXT:-0}"
-        echo "Start at $NEXT"
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
-    - name: Create geojson
-      run: |
-        ls -l
-        cat ${{github.event.inputs.fname}}.geojson additional.geojson > ${{github.event.inputs.fname}}.geojson
-        gzip ${{github.event.inputs.fname}}.geojson
-        ls -l
+        touch prev.geojson
+        gzip prev.geojson
     - name: Archive geojson as artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: ${{github.event.inputs.fname}}-geojsonseq
-        path: ${{github.event.inputs.fname}}.geojson.gz
+        name: prev-geojsonseq
+        path: prev.geojson.gz
 
-
-  checkout_dl_2:
+  checkout_dl:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        iteration: [1,2]
     needs:
-      - checkout_dl_1
+      - prepare_artifact
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -81,54 +58,54 @@ jobs:
     - name: Download AUS geojson from artifacts
       uses: actions/download-artifact@v2
       with:
-        name: ${{github.event.inputs.fname}}-geojsonseq
+        name: prev-geojsonseq
     - name: Restore old geojson
       id: restore
       run: |
         ls -l
-        gunzip ${{github.event.inputs.fname}}.geojson.gz
-        touch ${{github.event.inputs.fname}}.geojson
+        gunzip prev.geojson.gz
+        touch prev.geojson
     - name: Download
       id: download
       env:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
         pip install -e .
-        NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
+        NEXT=$(tail -n 1 prev.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
         timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson | true
     - name: Create geojson
       run: |
         ls -l
-        cat ${{github.event.inputs.fname}}.geojson additional.geojson > ${{github.event.inputs.fname}}.geojson
-        gzip ${{github.event.inputs.fname}}.geojson
+        cat prev.geojson additional.geojson > prev.geojson
+        gzip prev.geojson
         ls -l
     - name: Archive geojson as artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: ${{github.event.inputs.fname}}-geojsonseq
-        path: ${{github.event.inputs.fname}}.geojson.gz
+        name: prev-geojsonseq
+        path: prev.geojson.gz
 
   mbtiles:
     runs-on: ubuntu-latest
     container: klokantech/tippecanoe
     needs:
-      - checkout_dl_1
-      - checkout_dl_2
+      - checkout_dl
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Download AUS geojson from artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{github.event.inputs.fname}}-geojsonseq
+          name: prev-geojsonseq
       - name: Generate mbtiles
         id: download
         env:
           DL_PATH: ${{github.event.inputs.url}}
         run: |
           ls -l
+          mv prev.geojson.gz ${{github.event.inputs.fname}}.geojson.gz
           gunzip -k ${{github.event.inputs.fname}}.geojson.gz
           tippecanoe -zg -ab -o ${{github.event.inputs.fname}}.mbtiles -l "${{github.event.inputs.lid}}" -n "${{github.event.inputs.lname}}" -A "&copy; Department of Customer Service, NSW Government" --drop-densest-as-needed ${{github.event.inputs.fname}}.geojson
           gzip ${{github.event.inputs.fname}}.mbtiles
