@@ -42,7 +42,7 @@ jobs:
         DL_PATH: ${{github.event.inputs.url}}
       run: |
         pip install -e .
-        esri2geojson --timeout 360 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
+        esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid $DL_PATH ${{github.event.inputs.fname}}.geojson
     - name: Create geojson
       run: |
         gzip ${{github.event.inputs.fname}}.geojson
