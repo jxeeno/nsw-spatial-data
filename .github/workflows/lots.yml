@@ -52,7 +52,7 @@ jobs:
         NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
+        timeout −−preserve−status 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
     - name: Create geojson
       run: |
         ls -l
@@ -101,7 +101,7 @@ jobs:
         NEXT=$(tail -n 1 test.geojson |  jq '.properties.objectid')
         NEXT="${NEXT:-0}"
         echo "Start at $NEXT"
-        timeout 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
+        timeout −−preserve−status 60 esri2geojson --timeout 360 --pauseseconds 2 --requeststopause 50 -v --jsonlines --paginate-oid --startwith $NEXT $DL_PATH additional.geojson
     - name: Create geojson
       run: |
         ls -l
